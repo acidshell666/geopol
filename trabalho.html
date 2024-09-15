@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trabalho e Fábricas - Geopol</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .container {
+            display: flex;
+            flex: 1;
+            padding: 15px;
+        }
+        .work-section, .factory-section {
+            flex: 1;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            margin-right: 15px;
+            height: calc(100vh - 100px); /* Adjusted to fit header and footer */
+            overflow-y: auto;
+        }
+        .work-section h2, .factory-section h2 {
+            margin-top: 0;
+        }
+        .factory-section ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .factory-section li {
+            margin-bottom: 10px;
+        }
+        .factory-section button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .factory-section button:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            color: red;
+            font-weight: bold;
+        }
+        .factory-logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        Trabalho e Fábricas - Geopol
+    </div>
+    <div class="container">
+        <div class="work-section">
+            <h2>Trabalhar</h2>
+            <div id="workStatus">
+                <p id="workMessage">Você pode trabalhar em uma fábrica a cada 5 minutos.</p>
+                <button id="workButton">Trabalhar</button>
+            </div>
+        </div>
+        <div class="factory-section">
+            <h2>Fábricas</h2>
+            <div id="factoryCreation">
+                <h3>Criar uma Fábrica</h3>
+                <input type="text" id="factoryName" placeholder="Nome da Fábrica" />
+                <input type="number" id="factoryLevel" placeholder="Nível da Fábrica" />
+                <input type="number" id="factorySalary" placeholder="Salário da Fábrica" />
+                <input type="file" id="factoryLogo" />
+                <button id="createFactory">Criar Fábrica</button>
+                <p id="factoryMessage" class="message"></p>
+            </div>
+            <div id="factoryList">
+                <h3>Fábricas Existentes</h3>
+                <ul id="factories">
+                    <!-- Fábricas serão listadas aqui -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const workButton = document.getElementById('workButton');
+        const workMessage = document.getElementById('workMessage');
+        const factoryNameInput = document.getElementById('factoryName');
+        const factoryLevelInput = document.getElementById('factoryLevel');
+        const factorySalaryInput = document.getElementById('factorySalary');
+        const factoryLogoInput = document.getElementById('factoryLogo');
+        const createFactoryButton = document.getElementById('createFactory');
+        const factoryMessage = document.getElementById('factoryMessage');
+        const factoriesList = document.getElementById('factories');
+
+        let lastWorkTime = localStorage.getItem('lastWorkTime') || 0;
+        const workCooldown = 5 * 60 * 1000; // 5 minutos em milissegundos
+
+        function getFactoryBaseSalary(level) {
+            if (level >= 10 && level <= 20) return 100000;
+            if (level > 20 && level <= 30) return 150000;
+            if (level > 30 && level <= 40) return 200000;
+            if (level > 40 && level <= 50) return 250000;
+            return 300000;
+        }
+
+        function updateWorkStatus() {
+            const currentTime = Date.now();
+            const timeLeft = Math.max(0, workCooldown - (currentTime - lastWorkTime));
+            if (timeLeft > 0) {
+                workMessage.textContent = `Você pode trabalhar em uma fábrica em ${Math.ceil(timeLeft / 60000)} minutos.`;
+                workButton.disabled = true;
+            } else {
+                workMessage.textContent = 'Você pode trabalhar em uma fábrica agora!';
+                workButton.disabled = false;
+            }
+        }
+
+        function handleWork() {
+            const currentTime = Date.now();
+            const factories = JSON.parse(localStorage.getItem('factories')) || [];
+            if (factories.length === 0) {
+                workMessage.textContent = 'Não há fábricas para trabalhar.';
+                return;
+            }
+            const selectedFactory = prompt('Digite o nome da fábrica para trabalhar:');
+            const factory = factories.find(f => f.name === selectedFactory);
+            if (!factory) {
+                workMessage.textContent = 'Fábrica não encontrada.';
+                return;
+            }
+
+            if (currentTime - lastWorkTime < workCooldown) {
+                workMessage.textContent = 'Você ainda está em cooldown. Espere mais um pouco.';
+                return;
+            }
+
+            const baseGold = 10;
+            const salary = factory.salary || getFactoryBaseSalary(factory.level);
+            const totalGold = baseGold + salary;
+            lastWorkTime = currentTime;
+            localStorage.setItem('lastWorkTime', lastWorkTime);
+
+            // Atualiza XP da fábrica
+            factory.xp = (factory.xp || 0) + 10;
+            if (factory.xp >= factory.nextLevelXp) {
+                factory.level = (factory.level || 1) + 1;
+                factory.nextLevelXp = factory.nextLevelXp + 1000;
+                factory.upgradeCost = (factory.upgradeCost || 5) + 5;
+            }
+            localStorage.setItem('factories', JSON.stringify(factories));
+
+            updateFactoryList();
+            workMessage.textContent = `Você trabalhou na fábrica ${factory.name} e ganhou ${totalGold} de ouro.`;
+        }
+
+        function createFactory() {
+            const name = factoryNameInput.value.trim();
+            const level = parseInt(factoryLevelInput.value, 10);
+            const salary = parseInt(factorySalaryInput.value, 10);
+
+            if (!name || isNaN(level) || isNaN(salary) || level < 1 || salary < getFactoryBaseSalary(level)) {
+                factoryMessage.textContent = 'Dados inválidos para criar a fábrica.';
+                return;
+            }
+
+            const logo = factoryLogoInput.files[0];
+            if (!logo) {
+                factoryMessage.textContent = 'Por favor, selecione um logo para a fábrica.';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                const factories = JSON.parse(localStorage.getItem('factories')) || [];
+                if (factories.find(f => f.name === name)) {
+                    factoryMessage.textContent = 'Fábrica com esse nome já existe.';
+                    return;
+                }
+
+                factories.push({
+                    name,
+                    level,
+                    salary,
+                    logo: reader.result,
+                    xp: 0,
+                    nextLevelXp: 1000,
+                    upgradeCost: 5
+                });
+                localStorage.setItem('factories', JSON.stringify(factories));
+                updateFactoryList();
+                factoryMessage.textContent = 'Fábrica criada com sucesso!';
+                factoryNameInput.value = '';
+                factoryLevelInput.value = '';
+                factorySalaryInput.value = '';
+                factoryLogoInput.value = '';
+            };
+            reader.readAsDataURL(logo);
+        }
+
+        function updateFactoryList() {
+            const factories = JSON.parse(localStorage.getItem('factories')) || [];
+            factoriesList.innerHTML = factories
+                .sort((a, b) => b.level - a.level) // Ordena por nível
+                .map(factory => 
+                    `<li>
+                        <img src="${factory.logo}" class="factory-logo" alt="${factory.name} Logo" />
+                        ${factory.name} - Nível: ${factory.level} - Salário: ${factory.salary || getFactoryBaseSalary(factory.level)} 
+                        - XP: ${factory.xp} - Upg. Custo: ${factory.upgradeCost} Gold
+                    </li>`
+                ).join('');
+        }
+
+        workButton.addEventListener('click', handleWork);
+        createFactoryButton.addEventListener('click', createFactory);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateWorkStatus();
+            updateFactoryList();
+            setInterval(updateWorkStatus, 10000); // Atualiza o status de trabalho a cada 10 segundos
+        });
+    </script>
+</body>
+</html>

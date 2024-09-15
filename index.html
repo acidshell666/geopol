@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Geopol</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            width: 300px;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #555;
+        }
+        input {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .link {
+            margin-top: 10px;
+            display: block;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .link:hover {
+            text-decoration: underline;
+        }
+        .error {
+            color: red;
+        }
+        .password-requirements {
+            text-align: left;
+            margin: 10px 0;
+        }
+        .password-requirements li {
+            color: #666;
+        }
+        .valid {
+            color: green;
+        }
+        .invalid {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Login - Geopol</h1>
+        <div id="formContainer">
+            <form id="loginForm">
+                <input type="text" id="loginUsername" placeholder="Nome de usuário" required>
+                <input type="password" id="loginPassword" placeholder="Senha" required>
+                <button type="submit">Entrar</button>
+                <p id="loginError" class="error"></p>
+            </form>
+            <form id="registerForm" style="display: none;">
+                <input type="text" id="registerUsername" placeholder="Nome de usuário" required>
+                <input type="password" id="registerPassword" placeholder="Senha" required>
+                <ul class="password-requirements">
+                    <li id="lengthRequirement" class="invalid">Pelo menos 8 caracteres e no máximo 20</li>
+                    <li id="uppercaseRequirement" class="invalid">Pelo menos uma letra maiúscula</li>
+                    <li id="specialRequirement" class="invalid">Pelo menos um caractere especial (e.g., @, #, $, %, &)</li>
+                </ul>
+                <button type="submit">Registrar</button>
+                <p id="registerError" class="error"></p>
+            </form>
+            <a href="#" class="link" id="toggleForm">Não tem uma conta? Registre-se</a>
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const toggleForm = document.getElementById('toggleForm');
+        const loginError = document.getElementById('loginError');
+        const registerError = document.getElementById('registerError');
+
+        const lengthRequirement = document.getElementById('lengthRequirement');
+        const uppercaseRequirement = document.getElementById('uppercaseRequirement');
+        const specialRequirement = document.getElementById('specialRequirement');
+
+        const users = JSON.parse(localStorage.getItem('users')) || {};
+
+        function validatePassword(password) {
+            const lengthValid = password.length >= 8 && password.length <= 20;
+            const uppercaseValid = /[A-Z]/.test(password);
+            const specialValid = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+            lengthRequirement.className = lengthValid ? 'valid' : 'invalid';
+            uppercaseRequirement.className = uppercaseValid ? 'valid' : 'invalid';
+            specialRequirement.className = specialValid ? 'valid' : 'invalid';
+
+            return lengthValid && uppercaseValid && specialValid;
+        }
+
+        toggleForm.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (registerForm.style.display === 'none') {
+                registerForm.style.display = 'block';
+                loginForm.style.display = 'none';
+                toggleForm.textContent = 'Já tem uma conta? Entre aqui';
+            } else {
+                registerForm.style.display = 'none';
+                loginForm.style.display = 'block';
+                toggleForm.textContent = 'Não tem uma conta? Registre-se';
+            }
+            loginError.textContent = '';
+            registerError.textContent = '';
+        });
+
+        loginForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (users[username] && users[username] === password) {
+                console.log('Login bem-sucedido. Redirecionando para home.html...');
+                // Usar uma função setTimeout para garantir que a mensagem de sucesso seja exibida antes do redirecionamento
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 100);
+            } else {
+                loginError.textContent = 'Nome de usuário ou senha inválidos.';
+            }
+        });
+
+        registerForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+
+            if (!validatePassword(password)) {
+                registerError.textContent = 'A senha não atende aos requisitos.';
+                return;
+            }
+
+            if (users[username]) {
+                registerError.textContent = 'Nome de usuário já existe.';
+            } else {
+                users[username] = password;
+                localStorage.setItem('users', JSON.stringify(users));
+                alert('Registro bem-sucedido! Você pode agora fazer login.');
+                registerForm.style.display = 'none';
+                loginForm.style.display = 'block';
+                toggleForm.textContent = 'Não tem uma conta? Registre-se';
+            }
+        });
+    </script>
+</body>
+</html>

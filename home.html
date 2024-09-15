@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Geopol</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .container {
+            display: flex;
+            flex: 1;
+            padding: 15px;
+            gap: 15px;
+        }
+        .sidebar {
+            flex: 1;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+        .content {
+            flex: 3;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .sidebar ul li {
+            margin-bottom: 10px;
+        }
+        .sidebar ul li a {
+            text-decoration: none;
+            color: #007bff;
+        }
+        .sidebar ul li a:hover {
+            text-decoration: underline;
+        }
+        .player-status {
+            margin-bottom: 15px;
+        }
+        .player-status span {
+            font-weight: bold;
+        }
+        #chat {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        #messageList {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        #messageInput {
+            display: flex;
+            gap: 10px;
+        }
+        #messageInput input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #messageInput button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #messageInput button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        Home - Geopol
+    </div>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Menu</h2>
+            <ul>
+                <li><a href="trabalho.html">Trabalho</a></li>
+                <li><a href="#">Outra Página</a></li>
+                <!-- Adicione outros links de páginas aqui -->
+            </ul>
+            <div class="player-status">
+                <p><span>Jogadores Online:</span> <span id="onlineCount">0</span></p>
+            </div>
+        </div>
+        <div class="content">
+            <h2>Chat ao Vivo</h2>
+            <div id="chat">
+                <div id="messageList"></div>
+                <div id="messageInput">
+                    <input type="text" id="message" placeholder="Digite sua mensagem..." />
+                    <button id="sendMessage">Enviar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const onlineCountElement = document.getElementById('onlineCount');
+        const messageList = document.getElementById('messageList');
+        const messageInput = document.getElementById('message');
+        const sendMessageButton = document.getElementById('sendMessage');
+
+        const ws = new WebSocket('ws://localhost:3000'); // URL do servidor WebSocket
+
+        // Função para atualizar a lista de mensagens
+        function updateMessageList(messages) {
+            messageList.innerHTML = '';
+            messages.forEach(msg => {
+                const messageElement = document.createElement('p');
+                messageElement.textContent = msg;
+                messageList.appendChild(messageElement);
+            });
+            messageList.scrollTop = messageList.scrollHeight; // Mantém o scroll no final
+        }
+
+        // Função para atualizar a contagem de jogadores online
+        function updateOnlineCount(count) {
+            onlineCountElement.textContent = count;
+        }
+
+        // Envio de mensagens
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message) {
+                fetch('/api/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message }),
+                });
+                messageInput.value = ''; // Limpa o campo de entrada
+            }
+        }
+
+        sendMessageButton.addEventListener('click', sendMessage);
+
+        // Recebendo mensagens do servidor WebSocket
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'onlineCount') {
+                updateOnlineCount(data.count);
+            } else {
+                // Atualiza a lista de mensagens
+                updateMessageList([data.message, ...getMessages()]);
+            }
+        };
+
+        // Busca inicial de mensagens e contagem de jogadores
+        async function fetchInitialData() {
+            try {
+                const messagesResponse = await fetch('/api/messages');
+                const messagesData = await messagesResponse.json();
+                updateMessageList(messagesData.messages);
+
+                const onlineResponse = await fetch('/api/online');
+                const onlineData = await onlineResponse.json();
+                updateOnlineCount(onlineData.onlineCount);
+            } catch (error) {
+                console.error('Erro ao buscar dados iniciais:', error);
+            }
+        }
+
+        fetchInitialData();
+    </script>
+</body>
+</html>
