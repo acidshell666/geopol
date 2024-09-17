@@ -111,7 +111,7 @@
         const uppercaseRequirement = document.getElementById('uppercaseRequirement');
         const specialRequirement = document.getElementById('specialRequirement');
 
-        const users = JSON.parse(localStorage.getItem('users')) || {};
+        let users = JSON.parse(localStorage.getItem('users')) || {};
 
         function validatePassword(password) {
             const lengthValid = password.length >= 8 && password.length <= 20;
@@ -147,7 +147,6 @@
 
             if (users[username] && users[username] === password) {
                 console.log('Login bem-sucedido. Redirecionando para home.html...');
-                // Usar uma função setTimeout para garantir que a mensagem de sucesso seja exibida antes do redirecionamento
                 setTimeout(() => {
                     window.location.href = 'home.html';
                 }, 100);
