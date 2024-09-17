@@ -1,15 +1,19 @@
 const WebSocket = require('ws');
-const express = require('express');
 const http = require('http');
+const express = require('express');
 
+// Criação do servidor HTTP e WebSocket
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-let onlinePlayers = 0;
-let messages = [];
+let onlineCount = 0;
+const messages = []; // Armazena as mensagens do chat
 
-// Função para enviar dados para todos os clientes conectados
+// Middleware para servir arquivos estáticos
+app.use(express.static('public')); // Certifique-se de que seu HTML e outros arquivos estão na pasta 'public'
+
+// Função para broadcast de mensagens para todos os clientes conectados
 function broadcast(data) {
     wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
@@ -18,54 +22,35 @@ function broadcast(data) {
     });
 }
 
+// Gerenciamento de conexões WebSocket
 wss.on('connection', (ws) => {
-    onlinePlayers++;
-    broadcast({ type: 'onlineCount', count: onlinePlayers });
+    onlineCount++;
+    // Enviar contagem de jogadores online para todos os clientes
+    broadcast({ type: 'onlineCount', count: onlineCount });
 
-    // Enviar mensagens anteriores para novos clientes
+    // Enviar mensagens anteriores para o novo cliente
     ws.send(JSON.stringify({ type: 'initialMessages', messages }));
 
     ws.on('message', (message) => {
-        try {
-            const data = JSON.parse(message);
-            if (data.type === 'message' && data.content.length > 0 && data.content.length <= 100) {
+        const data = JSON.parse(message);
+
+        if (data.type === 'message') {
+            // Armazenar a nova mensagem e transmitir para todos os clientes
+            if (data.content.length <= 100) { // Limitar a 100 caracteres
                 messages.push(data.content);
-                if (messages.length > 100) {
-                    messages.shift(); // Remove a mensagem mais antiga
-                }
                 broadcast({ type: 'message', content: data.content });
             }
-        } catch (error) {
-            console.error('Erro ao processar a mensagem:', error);
         }
     });
 
     ws.on('close', () => {
-        onlinePlayers--;
-        broadcast({ type: 'onlineCount', count: onlinePlayers });
+        onlineCount--;
+        // Enviar a nova contagem de jogadores online para todos os clientes
+        broadcast({ type: 'onlineCount', count: onlineCount });
     });
 });
 
-app.use(express.json());
-
-app.get('/api/online', (req, res) => {
-    res.json({ onlineCount: onlinePlayers });
-});
-
-app.post('/api/messages', (req, res) => {
-    const { message } = req.body;
-    if (message.length > 0 && message.length <= 100) {
-        messages.push(message);
-        if (messages.length > 100) {
-            messages.shift(); // Remove a mensagem mais antiga
-        }
-        broadcast({ type: 'message', content: message });
-        res.status(200).send();
-    } else {
-        res.status(400).send('Mensagem inválida');
-    }
-});
-
-server.listen(3000, '0.0.0.0', () => {
+// Inicia o servidor na porta 3000
+server.listen(3000, () => {
     console.log('Servidor WebSocket rodando na porta 3000');
 });
