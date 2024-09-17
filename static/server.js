@@ -1,6 +1,7 @@
 const WebSocket = require('ws');
 const express = require('express');
 const http = require('http');
+
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
@@ -25,15 +26,17 @@ wss.on('connection', (ws) => {
     ws.send(JSON.stringify({ type: 'initialMessages', messages }));
 
     ws.on('message', (message) => {
-        const data = JSON.parse(message);
-        if (data.type === 'message') {
-            if (data.content.length > 0 && data.content.length <= 100) {
+        try {
+            const data = JSON.parse(message);
+            if (data.type === 'message' && data.content.length > 0 && data.content.length <= 100) {
                 messages.push(data.content);
-                if (messages.length > 100) { // Limitar o número de mensagens
+                if (messages.length > 100) {
                     messages.shift(); // Remove a mensagem mais antiga
                 }
                 broadcast({ type: 'message', content: data.content });
             }
+        } catch (error) {
+            console.error('Erro ao processar a mensagem:', error);
         }
     });
 
@@ -45,17 +48,15 @@ wss.on('connection', (ws) => {
 
 app.use(express.json());
 
-// Rota para obter a contagem de jogadores online
 app.get('/api/online', (req, res) => {
     res.json({ onlineCount: onlinePlayers });
 });
 
-// Rota para enviar mensagens
 app.post('/api/messages', (req, res) => {
     const { message } = req.body;
     if (message.length > 0 && message.length <= 100) {
         messages.push(message);
-        if (messages.length > 100) { // Limitar o número de mensagens
+        if (messages.length > 100) {
             messages.shift(); // Remove a mensagem mais antiga
         }
         broadcast({ type: 'message', content: message });
@@ -65,7 +66,6 @@ app.post('/api/messages', (req, res) => {
     }
 });
 
-// Substitua pelo IP público ou domínio do servidor
 server.listen(3000, '0.0.0.0', () => {
     console.log('Servidor WebSocket rodando na porta 3000');
 });
