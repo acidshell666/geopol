@@ -136,8 +136,7 @@
         const messageInput = document.getElementById('message');
         const sendMessageButton = document.getElementById('sendMessage');
 
-        // Substitua 'IP_PUBLICO_OU_DOMINIO' pelo IP público ou domínio do servidor
-        const ws = new WebSocket('ws://0.0.0.0:3000');
+        const ws = new WebSocket('ws://0.0.0.0:3000'); // Substitua com o IP do servidor se necessário
 
         // Função para atualizar a lista de mensagens
         function updateMessageList(messages) {
@@ -161,6 +160,8 @@
             if (message.length > 0 && message.length <= 100) {
                 ws.send(JSON.stringify({ type: 'message', content: message }));
                 messageInput.value = ''; // Limpa o campo de entrada
+            } else {
+                console.error('Mensagem inválida');
             }
         }
 
@@ -172,16 +173,15 @@
             if (data.type === 'onlineCount') {
                 updateOnlineCount(data.count);
             } else if (data.type === 'message') {
-                const messageElement = document.createElement('p');
-                messageElement.textContent = data.content;
-                messageList.appendChild(messageElement);
-                messageList.scrollTop = messageList.scrollHeight; // Mantém o scroll no final
+                // Atualiza a lista de mensagens com a nova mensagem
+                updateMessageList([data.content, ...getMessages()]);
             } else if (data.type === 'initialMessages') {
+                // Inicializa a lista de mensagens com mensagens anteriores
                 updateMessageList(data.messages);
             }
         };
 
-        // Busca inicial de mensagens e contagem de jogadores
+        // Função para buscar mensagens iniciais e a contagem de jogadores
         async function fetchInitialData() {
             try {
                 const messagesResponse = await fetch('/api/messages');
@@ -197,6 +197,13 @@
         }
 
         fetchInitialData();
+
+        // Função auxiliar para obter mensagens armazenadas localmente
+        function getMessages() {
+            const messages = [];
+            messageList.querySelectorAll('p').forEach(p => messages.push(p.textContent));
+            return messages;
+        }
     </script>
 </body>
 </html>
