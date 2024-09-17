@@ -159,11 +159,7 @@
         function sendMessage() {
             const message = messageInput.value.trim();
             if (message.length > 0 && message.length <= 100) {
-                fetch('/api/messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message }),
-                });
+                ws.send(JSON.stringify({ type: 'message', content: message }));
                 messageInput.value = ''; // Limpa o campo de entrada
             }
         }
@@ -176,7 +172,12 @@
             if (data.type === 'onlineCount') {
                 updateOnlineCount(data.count);
             } else if (data.type === 'message') {
-                updateMessageList([data.content, ...getMessages()]);
+                const messageElement = document.createElement('p');
+                messageElement.textContent = data.content;
+                messageList.appendChild(messageElement);
+                messageList.scrollTop = messageList.scrollHeight; // Mantém o scroll no final
+            } else if (data.type === 'initialMessages') {
+                updateMessageList(data.messages);
             }
         };
 
