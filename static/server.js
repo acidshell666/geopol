@@ -1,56 +1,34 @@
-const WebSocket = require('ws');
-const http = require('http');
 const express = require('express');
+const bodyParser = require('body-parser');
+const Pusher = require('pusher');
 
-// Criação do servidor HTTP e WebSocket
 const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const port = 3000;
 
-let onlineCount = 0;
-const messages = []; // Armazena as mensagens do chat
-
-// Middleware para servir arquivos estáticos
-app.use(express.static('public')); // Certifique-se de que seu HTML e outros arquivos estão na pasta 'public'
-
-// Função para broadcast de mensagens para todos os clientes conectados
-function broadcast(data) {
-    wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(data));
-        }
-    });
-}
-
-// Gerenciamento de conexões WebSocket
-wss.on('connection', (ws) => {
-    onlineCount++;
-    // Enviar contagem de jogadores online para todos os clientes
-    broadcast({ type: 'onlineCount', count: onlineCount });
-
-    // Enviar mensagens anteriores para o novo cliente
-    ws.send(JSON.stringify({ type: 'initialMessages', messages }));
-
-    ws.on('message', (message) => {
-        const data = JSON.parse(message);
-
-        if (data.type === 'message') {
-            // Armazenar a nova mensagem e transmitir para todos os clientes
-            if (data.content.length <= 100) { // Limitar a 100 caracteres
-                messages.push(data.content);
-                broadcast({ type: 'message', content: data.content });
-            }
-        }
-    });
-
-    ws.on('close', () => {
-        onlineCount--;
-        // Enviar a nova contagem de jogadores online para todos os clientes
-        broadcast({ type: 'onlineCount', count: onlineCount });
-    });
+// Configuração do Pusher
+const pusher = new Pusher({
+  appId: '1865978',
+  key: 'f7affd0d3f9b219756e7',
+  secret: '3207954ee416a0f1e3df',
+  cluster: 'us2',
+  useTLS: true
 });
 
-// Inicia o servidor na porta 3000
-server.listen(3000, () => {
-    console.log('Servidor WebSocket rodando na porta 3000');
+app.use(bodyParser.json());
+
+// Endpoint para enviar mensagens
+app.post('/api/send-message', (req, res) => {
+  const { message } = req.body;
+
+  if (message && message.length <= 100) { // Limite de 100 caracteres
+    pusher.trigger('chat', 'message', { message });
+    res.sendStatus(200);
+  } else {
+    res.status(400).send('Message exceeds character limit');
+  }
+});
+
+// Inicia o servidor
+app.listen(port, () => {
+  console.log(`Servidor rodando em http://localhost:${port}`);
 });
