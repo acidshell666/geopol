@@ -28,6 +28,9 @@ app.post('/api/send-message', (req, res) => {
   }
 });
 
+// Servir arquivos estáticos da raiz
+app.use(express.static(__dirname));
+
 // Inicia o servidor
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
