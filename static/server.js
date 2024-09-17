@@ -21,6 +21,9 @@ wss.on('connection', (ws) => {
     onlinePlayers++;
     broadcast({ type: 'onlineCount', count: onlinePlayers });
 
+    // Enviar mensagens anteriores para novos clientes
+    ws.send(JSON.stringify({ type: 'initialMessages', messages }));
+
     ws.on('message', (message) => {
         const data = JSON.parse(message);
         if (data.type === 'message') {
@@ -45,11 +48,6 @@ app.use(express.json());
 // Rota para obter a contagem de jogadores online
 app.get('/api/online', (req, res) => {
     res.json({ onlineCount: onlinePlayers });
-});
-
-// Rota para obter mensagens
-app.get('/api/messages', (req, res) => {
-    res.json({ messages });
 });
 
 // Rota para enviar mensagens
