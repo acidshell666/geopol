@@ -136,7 +136,7 @@
         const messageInput = document.getElementById('message');
         const sendMessageButton = document.getElementById('sendMessage');
 
-        const ws = new WebSocket('ws://0.0.0.0:3000'); // Substitua com o IP do servidor se necessário
+        const ws = new WebSocket('ws://localhost:3000'); // Substitua com o IP do servidor se necessário
 
         // Função para atualizar a lista de mensagens
         function updateMessageList(messages) {
