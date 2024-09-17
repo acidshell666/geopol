@@ -137,7 +137,7 @@
         const sendMessageButton = document.getElementById('sendMessage');
 
         // Substitua 'IP_PUBLICO_OU_DOMINIO' pelo IP público ou domínio do servidor
-        const ws = new WebSocket('ws://IP_PUBLICO_OU_DOMINIO:3000');
+        const ws = new WebSocket('ws://0.0.0.0:3000');
 
         // Função para atualizar a lista de mensagens
         function updateMessageList(messages) {
