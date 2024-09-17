@@ -101,6 +101,7 @@
             background-color: #0056b3;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/pusher@7.2.0/dist/web/pusher.min.js"></script>
 </head>
 <body>
     <div class="header">
@@ -110,8 +111,7 @@
         <div class="sidebar">
             <h2>Menu</h2>
             <ul>
-                <li><a href="trabalho.html">Trabalho</a></li>
-                <li><a href="#">Outra Página</a></li>
+                <li><a href="anotherPage.html">Outra Página</a></li>
                 <!-- Adicione outros links de páginas aqui -->
             </ul>
             <div class="player-status">
@@ -130,66 +130,74 @@
         </div>
     </div>
 
-    <!-- Código de integração do Pusher -->
-    <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
     <script>
-        // Substitua com suas credenciais Pusher
-        const PusherAppId = '1865978';
-        const PusherKey = 'f7affd0d3f9b219756e7';
-        const PusherCluster = 'us2';
-
-        Pusher.logToConsole = true;
-
-        const pusher = new Pusher(PusherKey, {
-            cluster: PusherCluster,
-            forceTLS: true
+        // Inicialize o Pusher
+        const pusher = new Pusher('f7affd0d3f9b219756e7', {
+            cluster: 'us2',
+            encrypted: true
         });
 
+              // Assine o canal e o evento
         const channel = pusher.subscribe('chat');
-        channel.bind('message', function(data) {
-            const messageElement = document.createElement('p');
-            messageElement.textContent = data.message;
-            document.getElementById('messageList').appendChild(messageElement);
-        });
 
-        document.getElementById('sendMessage').addEventListener('click', function() {
-            const messageInput = document.getElementById('message');
+        // Referências aos elementos do DOM
+        const messageList = document.getElementById('messageList');
+        const messageInput = document.getElementById('message');
+        const sendMessageButton = document.getElementById('sendMessage');
+
+        // Função para atualizar a lista de mensagens
+        function updateMessageList(message) {
+            const messageElement = document.createElement('p');
+            messageElement.textContent = message;
+            messageList.appendChild(messageElement);
+            messageList.scrollTop = messageList.scrollHeight; // Mantém o scroll no final
+        }
+
+        // Evento para o botão enviar mensagem
+        sendMessageButton.addEventListener('click', () => {
             const message = messageInput.value.trim();
-            if (message) {
+            if (message && message.length <= 100) {
                 fetch('/api/send-message', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ message })
                 }).then(response => {
                     if (response.ok) {
-                        messageInput.value = '';
+                        messageInput.value = ''; // Limpa o campo de entrada
+                    } else {
+                        alert('Erro ao enviar a mensagem. Tente novamente.');
                     }
                 }).catch(error => {
                     console.error('Erro ao enviar a mensagem:', error);
                 });
+            } else {
+                alert('A mensagem deve ter no máximo 100 caracteres.');
             }
         });
 
-        async function fetchInitialData() {
-            try {
-                const response = await fetch('/api/messages');
-                const data = await response.json();
-                const messageList = document.getElementById('messageList');
-                data.messages.forEach(msg => {
-                    const messageElement = document.createElement('p');
-                    messageElement.textContent = msg;
-                    messageList.appendChild(messageElement);
-                });
+        // Recebe e exibe mensagens do Pusher
+        channel.bind('message', data => {
+            updateMessageList(data.message);
+        });
 
-                const onlineResponse = await fetch('/api/online');
-                const onlineData = await onlineResponse.json();
-                document.getElementById('onlineCount').textContent = onlineData.onlineCount;
+        // (Opcional) Exemplo para simular a contagem de jogadores online
+        // Esta parte depende da sua implementação do servidor para contar jogadores online
+        async function updateOnlineCount() {
+            try {
+                const response = await fetch('/api/online');
+                const data = await response.json();
+                document.getElementById('onlineCount').textContent = data.onlineCount || 0;
             } catch (error) {
-                console.error('Erro ao buscar dados iniciais:', error);
+                console.error('Erro ao buscar a contagem de jogadores online:', error);
             }
         }
 
-        fetchInitialData();
+        updateOnlineCount();
     </script>
 </body>
 </html>
+
+
+       
