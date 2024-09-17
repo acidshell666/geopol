@@ -3,179 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Geopol</title>
+    <title>Home - Geopol</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
             color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
         }
         .container {
+            display: flex;
+            flex: 1;
+            padding: 15px;
+            gap: 15px;
+        }
+        .sidebar {
+            flex: 1;
             background-color: #fff;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            padding: 20px;
-            width: 300px;
-            text-align: center;
+            padding: 15px;
+            height: calc(100vh - 100px);
+            overflow-y: auto;
         }
-        h1 {
-            margin-bottom: 20px;
-            font-size: 24px;
-            color: #555;
+        .content {
+            flex: 3;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            height: calc(100vh - 100px);
+            overflow-y: auto;
         }
-        input {
-            width: calc(100% - 22px);
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .sidebar ul li {
+            margin-bottom: 10px;
+        }
+        .sidebar ul li a {
+            text-decoration: none;
+            color: #007bff;
+        }
+        .sidebar ul li a:hover {
+            text-decoration: underline;
+        }
+        .player-status {
+            margin-bottom: 15px;
+        }
+        .player-status span {
+            font-weight: bold;
+        }
+        #chat {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        #messageList {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
             padding: 10px;
-            margin: 10px 0;
+            border-radius: 4px;
+        }
+        #messageInput {
+            display: flex;
+            gap: 10px;
+        }
+        #messageInput input {
+            flex: 1;
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
         }
-        button {
+        #messageInput button {
+            padding: 10px 20px;
+            border: none;
             background-color: #007bff;
             color: #fff;
-            border: none;
-            padding: 10px;
             border-radius: 4px;
             cursor: pointer;
-            width: 100%;
-            font-size: 16px;
         }
-        button:hover {
+        #messageInput button:hover {
             background-color: #0056b3;
-        }
-        .link {
-            margin-top: 10px;
-            display: block;
-            color: #007bff;
-            text-decoration: none;
-        }
-        .link:hover {
-            text-decoration: underline;
-        }
-        .error {
-            color: red;
-        }
-        .password-requirements {
-            text-align: left;
-            margin: 10px 0;
-        }
-        .password-requirements li {
-            color: #666;
-        }
-        .valid {
-            color: green;
-        }
-        .invalid {
-            color: red;
         }
     </style>
 </head>
 <body>
+    <div class="header">
+        Home - Geopol
+    </div>
     <div class="container">
-        <h1>Login - Geopol</h1>
-        <div id="formContainer">
-            <form id="loginForm">
-                <input type="text" id="loginUsername" placeholder="Nome de usuário" required>
-                <input type="password" id="loginPassword" placeholder="Senha" required>
-                <button type="submit">Entrar</button>
-                <p id="loginError" class="error"></p>
-            </form>
-            <form id="registerForm" style="display: none;">
-                <input type="text" id="registerUsername" placeholder="Nome de usuário" required>
-                <input type="password" id="registerPassword" placeholder="Senha" required>
-                <ul class="password-requirements">
-                    <li id="lengthRequirement" class="invalid">Pelo menos 8 caracteres e no máximo 20</li>
-                    <li id="uppercaseRequirement" class="invalid">Pelo menos uma letra maiúscula</li>
-                    <li id="specialRequirement" class="invalid">Pelo menos um caractere especial (e.g., @, #, $, %, &)</li>
-                </ul>
-                <button type="submit">Registrar</button>
-                <p id="registerError" class="error"></p>
-            </form>
-            <a href="#" class="link" id="toggleForm">Não tem uma conta? Registre-se</a>
+        <div class="sidebar">
+            <h2>Menu</h2>
+            <ul>
+                <li><a href="trabalho.html">Trabalho</a></li>
+                <li><a href="#">Outra Página</a></li>
+                <!-- Adicione outros links de páginas aqui -->
+            </ul>
+            <div class="player-status">
+                <p><span>Jogadores Online:</span> <span id="onlineCount">0</span></p>
+            </div>
+        </div>
+        <div class="content">
+            <h2>Chat ao Vivo</h2>
+            <div id="chat">
+                <div id="messageList"></div>
+                <div id="messageInput">
+                    <input type="text" id="message" placeholder="Digite sua mensagem..." />
+                    <button id="sendMessage">Enviar</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-        const toggleForm = document.getElementById('toggleForm');
-        const loginError = document.getElementById('loginError');
-        const registerError = document.getElementById('registerError');
+        const onlineCountElement = document.getElementById('onlineCount');
+        const messageList = document.getElementById('messageList');
+        const messageInput = document.getElementById('message');
+        const sendMessageButton = document.getElementById('sendMessage');
 
-        const lengthRequirement = document.getElementById('lengthRequirement');
-        const uppercaseRequirement = document.getElementById('uppercaseRequirement');
-        const specialRequirement = document.getElementById('specialRequirement');
+        // Substitua pelo IP público ou nome de domínio do seu servidor WebSocket
+        const ws = new WebSocket('ws://YOUR_PUBLIC_IP_OR_DOMAIN:3000'); 
 
-        let users = JSON.parse(localStorage.getItem('users')) || {};
-
-        function validatePassword(password) {
-            const lengthValid = password.length >= 8 && password.length <= 20;
-            const uppercaseValid = /[A-Z]/.test(password);
-            const specialValid = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-            lengthRequirement.className = lengthValid ? 'valid' : 'invalid';
-            uppercaseRequirement.className = uppercaseValid ? 'valid' : 'invalid';
-            specialRequirement.className = specialValid ? 'valid' : 'invalid';
-
-            return lengthValid && uppercaseValid && specialValid;
+        // Função para atualizar a lista de mensagens
+        function updateMessageList(messages) {
+            messageList.innerHTML = '';
+            messages.forEach(msg => {
+                const messageElement = document.createElement('p');
+                messageElement.textContent = msg;
+                messageList.appendChild(messageElement);
+            });
+            messageList.scrollTop = messageList.scrollHeight; // Mantém o scroll no final
         }
 
-        toggleForm.addEventListener('click', (event) => {
-            event.preventDefault();
-            if (registerForm.style.display === 'none') {
-                registerForm.style.display = 'block';
-                loginForm.style.display = 'none';
-                toggleForm.textContent = 'Já tem uma conta? Entre aqui';
+        // Função para atualizar a contagem de jogadores online
+        function updateOnlineCount(count) {
+            onlineCountElement.textContent = count;
+        }
+
+        // Envio de mensagens
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message.length > 0 && message.length <= 100) {
+                ws.send(JSON.stringify({ type: 'message', content: message }));
+                messageInput.value = ''; // Limpa o campo de entrada
             } else {
-                registerForm.style.display = 'none';
-                loginForm.style.display = 'block';
-                toggleForm.textContent = 'Não tem uma conta? Registre-se';
+                console.error('Mensagem inválida');
             }
-            loginError.textContent = '';
-            registerError.textContent = '';
-        });
+        }
 
-        loginForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
+        sendMessageButton.addEventListener('click', sendMessage);
 
-            if (users[username] && users[username] === password) {
-                console.log('Login bem-sucedido. Redirecionando para home.html...');
-                setTimeout(() => {
-                    window.location.href = 'home.html';
-                }, 100);
-            } else {
-                loginError.textContent = 'Nome de usuário ou senha inválidos.';
+        // Recebendo mensagens do servidor WebSocket
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'onlineCount') {
+                updateOnlineCount(data.count);
+            } else if (data.type === 'message') {
+                // Atualiza a lista de mensagens com a nova mensagem
+                updateMessageList([data.content, ...getMessages()]);
+            } else if (data.type === 'initialMessages') {
+                // Inicializa a lista de mensagens com mensagens anteriores
+                updateMessageList(data.messages);
             }
-        });
+        };
 
-        registerForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-            const username = document.getElementById('registerUsername').value;
-            const password = document.getElementById('registerPassword').value;
+        // Função para buscar mensagens iniciais e a contagem de jogadores
+        async function fetchInitialData() {
+            try {
+                const messagesResponse = await fetch('/api/messages');
+                const messagesData = await messagesResponse.json();
+                updateMessageList(messagesData.messages);
 
-            if (!validatePassword(password)) {
-                registerError.textContent = 'A senha não atende aos requisitos.';
-                return;
+                const onlineResponse = await fetch('/api/online');
+                const onlineData = await onlineResponse.json();
+                updateOnlineCount(onlineData.onlineCount);
+            } catch (error) {
+                console.error('Erro ao buscar dados iniciais:', error);
             }
+        }
 
-            if (users[username]) {
-                registerError.textContent = 'Nome de usuário já existe.';
-            } else {
-                users[username] = password;
-                localStorage.setItem('users', JSON.stringify(users));
-                alert('Registro bem-sucedido! Você pode agora fazer login.');
-                registerForm.style.display = 'none';
-                loginForm.style.display = 'block';
-                toggleForm.textContent = 'Não tem uma conta? Registre-se';
-            }
-        });
+        fetchInitialData();
+
+        // Função auxiliar para obter mensagens armazenadas localmente
+        function getMessages() {
+            const messages = [];
+            messageList.querySelectorAll('p').forEach(p => messages.push(p.textContent));
+            return messages;
+        }
     </script>
 </body>
 </html>
