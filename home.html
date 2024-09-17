@@ -130,80 +130,66 @@
         </div>
     </div>
 
+    <!-- Código de integração do Pusher -->
+    <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
     <script>
-        const onlineCountElement = document.getElementById('onlineCount');
-        const messageList = document.getElementById('messageList');
-        const messageInput = document.getElementById('message');
-        const sendMessageButton = document.getElementById('sendMessage');
+        // Substitua com suas credenciais Pusher
+        const PusherAppId = '1865978';
+        const PusherKey = 'f7affd0d3f9b219756e7';
+        const PusherCluster = 'us2';
 
-        const ws = new WebSocket('ws://0.0.0.0:3000'); // Substitua com o IP do servidor se necessário
+        Pusher.logToConsole = true;
 
-        // Função para atualizar a lista de mensagens
-        function updateMessageList(messages) {
-            messageList.innerHTML = '';
-            messages.forEach(msg => {
-                const messageElement = document.createElement('p');
-                messageElement.textContent = msg;
-                messageList.appendChild(messageElement);
-            });
-            messageList.scrollTop = messageList.scrollHeight; // Mantém o scroll no final
-        }
+        const pusher = new Pusher(PusherKey, {
+            cluster: PusherCluster,
+            forceTLS: true
+        });
 
-        // Função para atualizar a contagem de jogadores online
-        function updateOnlineCount(count) {
-            onlineCountElement.textContent = count;
-        }
+        const channel = pusher.subscribe('chat');
+        channel.bind('message', function(data) {
+            const messageElement = document.createElement('p');
+            messageElement.textContent = data.message;
+            document.getElementById('messageList').appendChild(messageElement);
+        });
 
-        // Envio de mensagens
-        function sendMessage() {
+        document.getElementById('sendMessage').addEventListener('click', function() {
+            const messageInput = document.getElementById('message');
             const message = messageInput.value.trim();
-            if (message.length > 0 && message.length <= 100) {
-                ws.send(JSON.stringify({ type: 'message', content: message }));
-                messageInput.value = ''; // Limpa o campo de entrada
-            } else {
-                console.error('Mensagem inválida');
+            if (message) {
+                fetch('/api/send-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                }).then(response => {
+                    if (response.ok) {
+                        messageInput.value = '';
+                    }
+                }).catch(error => {
+                    console.error('Erro ao enviar a mensagem:', error);
+                });
             }
-        }
+        });
 
-        sendMessageButton.addEventListener('click', sendMessage);
-
-        // Recebendo mensagens do servidor WebSocket
-        ws.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            if (data.type === 'onlineCount') {
-                updateOnlineCount(data.count);
-            } else if (data.type === 'message') {
-                // Atualiza a lista de mensagens com a nova mensagem
-                updateMessageList([data.content, ...getMessages()]);
-            } else if (data.type === 'initialMessages') {
-                // Inicializa a lista de mensagens com mensagens anteriores
-                updateMessageList(data.messages);
-            }
-        };
-
-        // Função para buscar mensagens iniciais e a contagem de jogadores
         async function fetchInitialData() {
             try {
-                const messagesResponse = await fetch('/api/messages');
-                const messagesData = await messagesResponse.json();
-                updateMessageList(messagesData.messages);
+                const response = await fetch('/api/messages');
+                const data = await response.json();
+                const messageList = document.getElementById('messageList');
+                data.messages.forEach(msg => {
+                    const messageElement = document.createElement('p');
+                    messageElement.textContent = msg;
+                    messageList.appendChild(messageElement);
+                });
 
                 const onlineResponse = await fetch('/api/online');
                 const onlineData = await onlineResponse.json();
-                updateOnlineCount(onlineData.onlineCount);
+                document.getElementById('onlineCount').textContent = onlineData.onlineCount;
             } catch (error) {
                 console.error('Erro ao buscar dados iniciais:', error);
             }
         }
 
         fetchInitialData();
-
-        // Função auxiliar para obter mensagens armazenadas localmente
-        function getMessages() {
-            const messages = [];
-            messageList.querySelectorAll('p').forEach(p => messages.push(p.textContent));
-            return messages;
-        }
     </script>
 </body>
 </html>
